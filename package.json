@@ -1,0 +1,13 @@
+{
+  "name": "ceoc-letter-app",
+  "version": "1.0.0",
+  "scripts": {
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "build": "cd client && npm run build",
+    "start": "node server/index.js",
+    "dev": "concurrently \"cd server && node index.js\" \"cd client && npm run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0"
+  }
+}
