@@ -7,5 +7,9 @@ cmds = ["npm run install:all"]
 [phases.build]
 cmds = ["npm run build"]
 
+[variables]
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+CHROMIUM_PATH = "/nix/var/nix/profiles/default/bin/chromium"
+
 [start]
 cmd = "npm start"
