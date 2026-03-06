@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "chromium"]
+nixPkgs = ["nodejs_20", "chromium", "freefont_ttf", "liberation_ttf", "noto-fonts"]
 
 [phases.install]
 cmds = ["npm run install:all"]
@@ -10,6 +10,7 @@ cmds = ["npm run build"]
 [variables]
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
 CHROMIUM_PATH = "/nix/var/nix/profiles/default/bin/chromium"
+FONTCONFIG_PATH = "/nix/var/nix/profiles/default/etc/fonts"
 
 [start]
 cmd = "npm start"

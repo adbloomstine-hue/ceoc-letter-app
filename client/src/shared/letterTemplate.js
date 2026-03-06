@@ -27,7 +27,7 @@ export function generateLetterContent({ fullName, company, assemblyMember, senat
     : '<div style="height:60px;display:flex;align-items:flex-end;color:#ccc;font-style:italic;font-size:13px;margin-bottom:4px;font-family:sans-serif;">[Your signature will appear here]</div>';
 
   return '<style>'
-    + '.ceoc-letter{font-family:Georgia,serif;margin:0;padding:0;color:#222;font-size:14px;line-height:1.6}'
+    + '.ceoc-letter{font-family:"Liberation Serif","Noto Serif",Georgia,"Times New Roman",Times,serif;margin:0;padding:0;color:#222;font-size:14px;line-height:1.6}'
     + '.ceoc-letter .letter-body{padding:48px;max-width:680px}'
     + '.ceoc-letter .date{margin-bottom:24px;color:#555}'
     + '.ceoc-letter .content p{line-height:1.9;margin-bottom:16px}'
@@ -78,7 +78,9 @@ const PDF_STYLE_OVERRIDES = '<style>'
 export function generateLetterHTML(data) {
   return '<!DOCTYPE html>'
     + '<html>'
-    + '<head><meta charset="utf-8"></head>'
+    + '<head><meta charset="utf-8">'
+    + '<style>body,html{font-family:"Liberation Serif","Noto Serif",Georgia,"Times New Roman",Times,serif;}</style>'
+    + '</head>'
     + '<body style="margin:0;padding:0;">'
     + generateLetterContent(data)
     + PDF_STYLE_OVERRIDES
