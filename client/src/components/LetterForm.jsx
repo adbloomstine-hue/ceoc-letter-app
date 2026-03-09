@@ -158,16 +158,27 @@ export default function LetterForm() {
             <label htmlFor="company" className="block text-sm font-medium text-navy-800 mb-1">
               Company Name <span className="text-red-500">*</span>
             </label>
-            <input
+            <select
               id="company"
               name="company"
-              type="text"
               required
               value={formData.company}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-400 focus:border-gold-400 outline-none transition-colors"
-              placeholder=""
-            />
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-400 focus:border-gold-400 outline-none transition-colors bg-white"
+            >
+              <option value="" disabled>-- Select Your Company --</option>
+              <option value="Pavement Recycling Systems, Inc.">Pavement Recycling Systems, Inc.</option>
+              <option value="Marina Landscape">Marina Landscape</option>
+              <option value="Caltrol">Caltrol</option>
+              <option value="Blois Construction">Blois Construction</option>
+              <option value="Bapko Metal">Bapko Metal</option>
+              <option value="Ghilotti Construction Company">Ghilotti Construction Company</option>
+              <option value="Griffith Company">Griffith Company</option>
+              <option value="Riverside Construction">Riverside Construction</option>
+              <option value="Couts Heating and Cooling">Couts Heating and Cooling</option>
+              <option value="Murray Company">Murray Company</option>
+              <option value="McGuire and Hester">McGuire and Hester</option>
+            </select>
           </div>
 
           <div>
