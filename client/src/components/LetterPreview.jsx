@@ -12,6 +12,9 @@ export default function LetterPreview({ formData, signatureImage }) {
   const html = generateLetterContent({
     fullName: formData.fullName,
     company: formData.company,
+    address: formData.address,
+    city: formData.city,
+    zip: formData.zip,
     assemblyMember: formData.assemblyMember,
     senator: formData.senator,
     signatureImage,

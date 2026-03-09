@@ -8,32 +8,34 @@
  * Any change here automatically updates both the live preview AND the PDF.
  */
 
-export function generateLetterContent({ fullName, company, assemblyMember, senator, signatureImage, date }) {
+export function generateLetterContent({ fullName, company, address, city, zip, assemblyMember, senator, signatureImage, date }) {
   const asmName = assemblyMember?.name || '[Assembly Member]';
   const asmDistrict = assemblyMember?.district || '[#]';
-  const asmWebsite = assemblyMember?.website || '';
 
   const senName = senator?.name || '[Senator]';
-  const senLastName = senator?.lastName || '[Last Name]';
   const senDistrict = senator?.district || '[#]';
-  const senWebsite = senator?.website || '';
 
   const displayName = fullName || '[Full Name]';
   const displayCompany = company || '[Company Name]';
+  const displayAddress = address || '[Street Address]';
+  const displayCity = city || '[City]';
+  const displayZip = zip || '[ZIP]';
   const displayDate = date || '[Date]';
 
   const signatureHTML = signatureImage
-    ? '<img src="' + signatureImage + '" style="max-height:80px;display:block;margin-bottom:4px;" />'
-    : '<div style="height:60px;display:flex;align-items:flex-end;color:#ccc;font-style:italic;font-size:13px;margin-bottom:4px;font-family:sans-serif;">[Your signature will appear here]</div>';
+    ? '<img src="' + signatureImage + '" style="max-height:60px;display:block;margin-bottom:4px;" />'
+    : '<div style="height:50px;display:flex;align-items:flex-end;color:#ccc;font-style:italic;font-size:13px;margin-bottom:4px;font-family:sans-serif;">[Your signature will appear here]</div>';
 
   return '<style>'
     + '.ceoc-letter{font-family:"Liberation Serif","Noto Serif",Georgia,"Times New Roman",Times,serif;margin:0;padding:0;color:#222;font-size:14px;line-height:1.6}'
     + '.ceoc-letter .letter-body{padding:48px;max-width:680px}'
-    + '.ceoc-letter .date{margin-bottom:24px;color:#555}'
-    + '.ceoc-letter .content p{line-height:1.9;margin-bottom:16px}'
-    + '.ceoc-letter .blockquote{border-left:3px solid #c9a84c;padding:12px 20px;margin:20px 0;font-style:italic;color:#444;background:#fafaf5}'
+    + '.ceoc-letter .date{margin-bottom:20px;color:#555}'
+    + '.ceoc-letter .content p{line-height:1.8;margin-bottom:14px}'
+    + '.ceoc-letter .blockquote{border-left:3px solid #c9a84c;padding:10px 20px;margin:16px 0;font-style:italic;color:#444;background:#fafaf5}'
     + '.ceoc-letter .blockquote p{margin:0}'
-    + '.ceoc-letter .signature-block{margin-top:48px;line-height:1.8}'
+    + '.ceoc-letter .signature-block{margin-top:28px;line-height:1.6}'
+    + '.ceoc-letter .rep-row{display:flex;gap:24px;margin-top:8px}'
+    + '.ceoc-letter .rep-row span{white-space:nowrap}'
     + '</style>'
     + '<div class="ceoc-letter">'
     + '<div class="letter-body">'
@@ -55,24 +57,25 @@ export function generateLetterContent({ fullName, company, assemblyMember, senat
     + signatureHTML
     + '<strong>' + displayName + '</strong><br>'
     + displayCompany + '<br>'
-    + '<br>'
-    + 'State Senator: ' + senName + ', SD ' + senDistrict + '<br>'
-    + 'Assembly Member: ' + asmName + ', AD ' + asmDistrict + '<br>'
-    + '<br>'
-    + displayDate
+    + displayAddress + '<br>'
+    + displayCity + ', CA ' + displayZip
+    + '<div class="rep-row">'
+    + '<span>State Senator: ' + senName + ', SD ' + senDistrict + '</span>'
+    + '<span>Assembly Member: ' + asmName + ', AD ' + asmDistrict + '</span>'
+    + '</div>'
     + '</div>'
     + '</div>'
     + '</div>';
 }
 
 const PDF_STYLE_OVERRIDES = '<style>'
-  + '.ceoc-letter{font-size:13px;line-height:1.5}'
+  + '.ceoc-letter{font-size:13px;line-height:1.45}'
   + '.ceoc-letter .letter-body{padding:0}'
-  + '.ceoc-letter .date{margin-bottom:16px}'
-  + '.ceoc-letter .content p{line-height:1.6;margin-bottom:10px}'
-  + '.ceoc-letter .blockquote{padding:8px 16px;margin:12px 0}'
-  + '.ceoc-letter .signature-block{margin-top:24px;line-height:1.6}'
-  + '.ceoc-letter .signature-block img{max-height:60px}'
+  + '.ceoc-letter .date{margin-bottom:14px}'
+  + '.ceoc-letter .content p{line-height:1.55;margin-bottom:9px}'
+  + '.ceoc-letter .blockquote{padding:8px 16px;margin:10px 0}'
+  + '.ceoc-letter .signature-block{margin-top:20px;line-height:1.5}'
+  + '.ceoc-letter .signature-block img{max-height:50px}'
   + '</style>';
 
 export function generateLetterHTML(data) {
