@@ -78,13 +78,32 @@ loadTemplate().then(() => {
 // Graceful shutdown for Railway SIGTERM
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully...');
+
+  // Force exit after 5 seconds so Railway doesn't SIGKILL us (which triggers crash emails)
+  const forceExit = setTimeout(() => {
+    console.log('Force exit after timeout');
+    process.exit(0);
+  }, 5000);
+  forceExit.unref();
+
   if (server) {
     server.close(() => {
-      sessionDb.close();
+      try { sessionDb.close(); } catch (_) {}
       console.log('Server closed.');
       process.exit(0);
     });
   } else {
     process.exit(0);
   }
+});
+
+// Prevent unhandled errors from crashing the process silently
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  // Give time to flush logs, then exit
+  setTimeout(() => process.exit(1), 1000);
 });
