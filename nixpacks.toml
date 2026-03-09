@@ -13,4 +13,4 @@ CHROMIUM_PATH = "/nix/var/nix/profiles/default/bin/chromium"
 FONTCONFIG_PATH = "/nix/var/nix/profiles/default/etc/fonts"
 
 [start]
-cmd = "npm start"
+cmd = "node server/index.js"
