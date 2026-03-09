@@ -107,8 +107,17 @@ export default function AdminTable() {
     }
   }
 
-  const formatDate = (dateStr) =>
-    new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+  const formatDate = (dateStr) => {
+    const d = new Date(dateStr + 'Z')
+    return d.toLocaleString('en-US', {
+      timeZone: 'America/Los_Angeles',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  }
 
   const startIdx = (page - 1) * PAGE_SIZE
 

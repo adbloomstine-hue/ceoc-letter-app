@@ -22,7 +22,8 @@ db.exec(`
     lng REAL,
     signature_image TEXT,
     pdf_path TEXT,
-    submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    letter_date TEXT
   )
 `);
 
@@ -43,6 +44,9 @@ if (!columns.includes('lat')) {
 if (!columns.includes('lng')) {
   db.exec('ALTER TABLE letters ADD COLUMN lng REAL');
 }
+if (!columns.includes('letter_date')) {
+  db.exec('ALTER TABLE letters ADD COLUMN letter_date TEXT');
+}
 
 // Create indexes for faster queries at scale
 db.exec(`
@@ -53,12 +57,12 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_senate_district ON letters(senate_district);
 `);
 
-const SELECT_COLS = 'id, full_name, company, address, city, zip, assembly_member, assembly_district, senator, senate_district, submitted_at, pdf_path';
+const SELECT_COLS = 'id, full_name, company, address, city, zip, assembly_member, assembly_district, senator, senate_district, submitted_at, letter_date, pdf_path';
 
 const queries = {
   insertLetter: db.prepare(`
-    INSERT INTO letters (full_name, company, address, city, zip, assembly_member, assembly_district, senator, senate_district, lat, lng, signature_image, pdf_path)
-    VALUES (@full_name, @company, @address, @city, @zip, @assembly_member, @assembly_district, @senator, @senate_district, @lat, @lng, @signature_image, @pdf_path)
+    INSERT INTO letters (full_name, company, address, city, zip, assembly_member, assembly_district, senator, senate_district, lat, lng, signature_image, pdf_path, letter_date)
+    VALUES (@full_name, @company, @address, @city, @zip, @assembly_member, @assembly_district, @senator, @senate_district, @lat, @lng, @signature_image, @pdf_path, @letter_date)
   `),
 
   getLetterById: db.prepare('SELECT * FROM letters WHERE id = ?'),

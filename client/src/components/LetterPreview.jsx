@@ -2,6 +2,7 @@ import { generateLetterContent } from '../shared/letterTemplate'
 
 function formatDate() {
   return new Date().toLocaleDateString('en-US', {
+    timeZone: 'America/Los_Angeles',
     year: 'numeric',
     month: 'long',
     day: 'numeric',

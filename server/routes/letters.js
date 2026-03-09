@@ -35,10 +35,11 @@ router.post('/submit-letter', async (req, res) => {
     }
 
     const date = new Date().toLocaleDateString('en-US', {
+      timeZone: 'America/Los_Angeles',
       year: 'numeric', month: 'long', day: 'numeric',
     });
 
-    // Insert letter into database
+    // Insert letter into database (letter_date captures the date printed on the letter)
     const result = queries.insertLetter.run({
       full_name: fullName,
       company,
@@ -53,6 +54,7 @@ router.post('/submit-letter', async (req, res) => {
       lng: lng || null,
       signature_image: signatureImage,
       pdf_path: null,
+      letter_date: date,
     });
 
     const letterId = result.lastInsertRowid;
