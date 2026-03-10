@@ -86,8 +86,8 @@ const queries = {
       params.push(`%${filters.name}%`);
     }
     if (filters.company) {
-      whereClauses.push('company LIKE ?');
-      params.push(`%${filters.company}%`);
+      whereClauses.push('company = ?');
+      params.push(filters.company);
     }
     if (filters.assemblyDistrict) {
       whereClauses.push('assembly_district LIKE ?');
@@ -136,13 +136,28 @@ const queries = {
   },
 
   getStats: () => {
-    return db.prepare(`
+    const summary = db.prepare(`
       SELECT
         COUNT(*) as total,
         COUNT(DISTINCT assembly_district) as uniqueAssembly,
         COUNT(DISTINCT senate_district) as uniqueSenate
       FROM letters
     `).get();
+    const companyCounts = db.prepare(
+      'SELECT company, COUNT(*) as count FROM letters GROUP BY company ORDER BY count DESC'
+    ).all();
+    return { ...summary, companyCounts };
+  },
+
+  getFilteredLetters: (filters = {}) => {
+    let whereClauses = ['1=1'];
+    const params = [];
+    if (filters.name) { whereClauses.push('full_name LIKE ?'); params.push(`%${filters.name}%`); }
+    if (filters.company) { whereClauses.push('company = ?'); params.push(filters.company); }
+    if (filters.assemblyDistrict) { whereClauses.push('assembly_district LIKE ?'); params.push(`%${filters.assemblyDistrict}%`); }
+    if (filters.senateDistrict) { whereClauses.push('senate_district LIKE ?'); params.push(`%${filters.senateDistrict}%`); }
+    const sql = `SELECT ${SELECT_COLS} FROM letters WHERE ${whereClauses.join(' AND ')} ORDER BY submitted_at DESC`;
+    return db.prepare(sql).all(...params);
   },
 
   updatePdfPath: db.prepare('UPDATE letters SET pdf_path = ? WHERE id = ?'),

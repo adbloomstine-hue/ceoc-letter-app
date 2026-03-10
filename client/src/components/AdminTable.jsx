@@ -4,7 +4,7 @@ const PAGE_SIZE = 50
 
 export default function AdminTable() {
   const [letters, setLetters] = useState([])
-  const [stats, setStats] = useState({ total: 0, uniqueAssembly: 0, uniqueSenate: 0 })
+  const [stats, setStats] = useState({ total: 0, uniqueAssembly: 0, uniqueSenate: 0, companyCounts: [] })
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ name: '', company: '', assemblyDistrict: '', senateDistrict: '' })
   const [exporting, setExporting] = useState(false)
@@ -71,7 +71,13 @@ export default function AdminTable() {
   const downloadAll = async () => {
     setExporting(true)
     try {
-      const res = await fetch('/api/admin/export', { credentials: 'include' })
+      const params = new URLSearchParams()
+      if (filters.name) params.set('name', filters.name)
+      if (filters.company) params.set('company', filters.company)
+      if (filters.assemblyDistrict) params.set('assemblyDistrict', filters.assemblyDistrict)
+      if (filters.senateDistrict) params.set('senateDistrict', filters.senateDistrict)
+      const qs = params.toString()
+      const res = await fetch(`/api/admin/export${qs ? '?' + qs : ''}`, { credentials: 'include' })
       if (!res.ok) throw new Error('Export failed')
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
@@ -123,20 +129,40 @@ export default function AdminTable() {
 
   return (
     <div className="overflow-hidden">
-      {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-navy-50 rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-navy-800">{stats.total}</div>
-          <div className="text-xs text-navy-600 mt-1">Total Letters</div>
+      {/* Summary Stats Bar */}
+      <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6">
+        <div className="flex items-baseline gap-6 mb-3">
+          <div>
+            <span className="text-2xl font-bold text-navy-800">{stats.total}</span>
+            <span className="text-sm text-gray-500 ml-1.5">Total Letters</span>
+          </div>
+          <div>
+            <span className="text-lg font-bold text-gold-700">{stats.uniqueAssembly}</span>
+            <span className="text-xs text-gray-500 ml-1">Assembly Districts</span>
+          </div>
+          <div>
+            <span className="text-lg font-bold text-green-700">{stats.uniqueSenate}</span>
+            <span className="text-xs text-gray-500 ml-1">Senate Districts</span>
+          </div>
         </div>
-        <div className="bg-gold-50 rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-gold-700">{stats.uniqueAssembly}</div>
-          <div className="text-xs text-gold-600 mt-1">Assembly Districts</div>
-        </div>
-        <div className="bg-green-50 rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-green-700">{stats.uniqueSenate}</div>
-          <div className="text-xs text-green-600 mt-1">Senate Districts</div>
-        </div>
+        {stats.companyCounts.length > 0 && (
+          <div>
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Letters by Company</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-1">
+              {stats.companyCounts.map((c) => (
+                <div key={c.company} className="flex items-center justify-between text-sm py-0.5">
+                  <span className="text-gray-700 truncate mr-2">{c.company}</span>
+                  <span className="font-semibold text-navy-800 tabular-nums">{c.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {(filters.name || filters.company || filters.assemblyDistrict || filters.senateDistrict) && (
+          <div className="mt-3 text-sm text-gold-700 font-medium">
+            Showing {totalFiltered} of {stats.total} total letters
+          </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -148,13 +174,16 @@ export default function AdminTable() {
           onChange={(e) => setFilters((f) => ({ ...f, name: e.target.value }))}
           className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-400 focus:border-gold-400 outline-none text-sm"
         />
-        <input
-          type="text"
-          placeholder="Filter by company..."
+        <select
           value={filters.company}
           onChange={(e) => setFilters((f) => ({ ...f, company: e.target.value }))}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-400 focus:border-gold-400 outline-none text-sm"
-        />
+          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-400 focus:border-gold-400 outline-none text-sm bg-white"
+        >
+          <option value="">All Companies</option>
+          {stats.companyCounts.map((c) => (
+            <option key={c.company} value={c.company}>{c.company} ({c.count})</option>
+          ))}
+        </select>
         <input
           type="text"
           placeholder="Assembly district..."
@@ -169,13 +198,18 @@ export default function AdminTable() {
           onChange={(e) => setFilters((f) => ({ ...f, senateDistrict: e.target.value }))}
           className="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-400 focus:border-gold-400 outline-none text-sm"
         />
-        <button
-          onClick={downloadAll}
-          disabled={exporting || stats.total === 0}
-          className="px-4 py-2 bg-gold-500 text-white text-sm font-medium rounded-lg hover:bg-gold-600 disabled:opacity-50 transition-colors whitespace-nowrap"
-        >
-          {exporting ? 'Exporting...' : 'Download All (ZIP)'}
-        </button>
+        <div className="flex flex-col items-center gap-1">
+          <button
+            onClick={downloadAll}
+            disabled={exporting || stats.total === 0}
+            className="px-4 py-2 bg-gold-500 text-white text-sm font-medium rounded-lg hover:bg-gold-600 disabled:opacity-50 transition-colors whitespace-nowrap"
+          >
+            {exporting ? 'Exporting...' : 'Download All (ZIP)'}
+          </button>
+          {(filters.name || filters.company || filters.assemblyDistrict || filters.senateDistrict) && (
+            <span className="text-[10px] text-gray-400">Downloads letters matching current filters</span>
+          )}
+        </div>
         <button
           onClick={() => setShowClearConfirm(true)}
           disabled={stats.total === 0}

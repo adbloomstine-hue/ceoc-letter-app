@@ -90,7 +90,15 @@ router.get('/letters/:id/pdf', requireAuth, (req, res) => {
 // GET /api/admin/export
 router.get('/export', requireAuth, (req, res) => {
   try {
-    const letters = queries.getAllLetters.all();
+    const { name, company, assemblyDistrict, senateDistrict } = req.query;
+    const filters = {};
+    if (name) filters.name = name;
+    if (company) filters.company = company;
+    if (assemblyDistrict) filters.assemblyDistrict = assemblyDistrict;
+    if (senateDistrict) filters.senateDistrict = senateDistrict;
+
+    const hasFilters = Object.keys(filters).length > 0;
+    const letters = hasFilters ? queries.getFilteredLetters(filters) : queries.getAllLetters.all();
     const pdfLetters = letters.filter((l) => {
       try { return l.pdf_path && fs.existsSync(l.pdf_path); }
       catch { return false; }
