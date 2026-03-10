@@ -1,8 +1,22 @@
 const express = require('express');
 const router = express.Router();
+const { rateLimit } = require('express-rate-limit');
 const { queries } = require('../services/db');
 const { lookupReps } = require('../services/repLookup');
 const { generatePDF } = require('../services/pdfGenerator');
+
+// Max 5 submissions per IP per hour
+const submitLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.RATE_LIMIT_DISABLED === 'true',
+  message: { error: 'Too many submissions from this IP. Please try again later.' },
+  // In production, trust proxy is set (Railway). In dev, suppress the X-Forwarded-For
+  // validation warning since we handle proxy trust correctly for each environment.
+  validate: { xForwardedForHeader: false },
+});
 
 // POST /api/lookup-reps
 router.post('/lookup-reps', async (req, res) => {
@@ -26,7 +40,7 @@ router.post('/lookup-reps', async (req, res) => {
 });
 
 // POST /api/submit-letter
-router.post('/submit-letter', async (req, res) => {
+router.post('/submit-letter', submitLimiter, async (req, res) => {
   try {
     const { fullName, company, address, city, zip, assemblyMember, senator, signatureImage, lat, lng } = req.body;
 

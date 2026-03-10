@@ -79,6 +79,14 @@ function releaseSlot() {
 }
 
 async function generatePDF(letterData, letterId) {
+  // TEST_MODE: skip Puppeteer, write a tiny placeholder file
+  if (process.env.TEST_MODE === 'true') {
+    const filename = `letter-${letterId}-${Date.now()}.pdf`;
+    const filepath = path.join(PDF_DIR, filename);
+    await fsp.writeFile(filepath, '%PDF-1.4 test\n');
+    return { filepath, filename };
+  }
+
   if (!chromiumPath) {
     throw new Error('Chromium is not available. Cannot generate PDF.');
   }
