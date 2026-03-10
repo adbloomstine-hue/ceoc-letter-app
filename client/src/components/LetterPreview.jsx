@@ -22,11 +22,18 @@ export default function LetterPreview({ formData, signatureImage }) {
     date: formatDate(),
   })
 
+  const previewStyles = '<style>'
+    + '.ceoc-letter{font-size:18px}'
+    + '.ceoc-letter .content p{font-size:18px}'
+    + '.ceoc-letter .address-block{font-size:18px}'
+    + '.ceoc-letter .signature-block{font-size:18px}'
+    + '</style>'
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
       <div
         style={{ zoom: 0.55 }}
-        dangerouslySetInnerHTML={{ __html: html }}
+        dangerouslySetInnerHTML={{ __html: html + previewStyles }}
       />
     </div>
   )
