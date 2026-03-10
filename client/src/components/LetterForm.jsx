@@ -18,6 +18,7 @@ const INITIAL_FORM = {
 
 export default function LetterForm() {
   const [formData, setFormData] = useState(INITIAL_FORM)
+  const [companySelect, setCompanySelect] = useState('')
   const [signatureImage, setSignatureImage] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -26,6 +27,16 @@ export default function LetterForm() {
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  const handleCompanySelect = (e) => {
+    const val = e.target.value
+    setCompanySelect(val)
+    setFormData((prev) => ({ ...prev, company: val === '__other__' ? '' : val }))
+  }
+
+  const handleCompanyOther = (e) => {
+    setFormData((prev) => ({ ...prev, company: e.target.value }))
   }
 
   const handleRepsFound = useCallback((data) => {
@@ -123,6 +134,7 @@ export default function LetterForm() {
           onClick={() => {
             setSubmitted(false)
             setFormData(INITIAL_FORM)
+            setCompanySelect('')
             setSignatureImage(null)
           }}
           className="px-6 py-2 bg-gold-500 text-white font-medium rounded-lg hover:bg-gold-600 transition-colors"
@@ -160,10 +172,9 @@ export default function LetterForm() {
             </label>
             <select
               id="company"
-              name="company"
               required
-              value={formData.company}
-              onChange={handleChange}
+              value={companySelect}
+              onChange={handleCompanySelect}
               className="w-full px-4 py-2.5 h-[46px] text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-400 focus:border-gold-400 outline-none transition-colors bg-white"
             >
               <option value="" disabled>-- Select Your Company --</option>
@@ -178,7 +189,18 @@ export default function LetterForm() {
               <option value="Couts Heating and Cooling">Couts Heating and Cooling</option>
               <option value="Murray Company">Murray Company</option>
               <option value="McGuire and Hester">McGuire and Hester</option>
+              <option value="__other__">Other</option>
             </select>
+            {companySelect === '__other__' && (
+              <input
+                type="text"
+                required
+                value={formData.company}
+                onChange={handleCompanyOther}
+                placeholder="Please enter your company name"
+                className="w-full mt-2 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-400 focus:border-gold-400 outline-none transition-colors"
+              />
+            )}
           </div>
 
           <div>
