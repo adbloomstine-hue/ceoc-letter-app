@@ -4,7 +4,8 @@ const fs = require('fs');
 const fsp = require('fs').promises;
 const { generateLetterHTML } = require('../templates/letterTemplate');
 
-const PDF_DIR = process.env.PDF_PATH || path.join(__dirname, '..', 'storage', 'pdfs');
+const isProduction = process.env.NODE_ENV === 'production';
+const PDF_DIR = process.env.PDF_PATH || (isProduction ? '/app/storage/pdfs' : path.join(__dirname, '..', 'storage', 'pdfs'));
 
 // Ensure PDF directory exists
 fs.mkdirSync(PDF_DIR, { recursive: true });
@@ -52,10 +53,37 @@ try {
   console.warn('PDF generation will fail until Chromium is available.');
 }
 
+// Simple concurrency limiter to prevent too many Chromium instances
+const MAX_CONCURRENT = 3;
+let activeCount = 0;
+const queue = [];
+
+function acquireSlot() {
+  return new Promise((resolve) => {
+    if (activeCount < MAX_CONCURRENT) {
+      activeCount++;
+      resolve();
+    } else {
+      queue.push(resolve);
+    }
+  });
+}
+
+function releaseSlot() {
+  if (queue.length > 0) {
+    const next = queue.shift();
+    next();
+  } else {
+    activeCount--;
+  }
+}
+
 async function generatePDF(letterData, letterId) {
   if (!chromiumPath) {
     throw new Error('Chromium is not available. Cannot generate PDF.');
   }
+
+  await acquireSlot();
 
   const html = generateLetterHTML(letterData);
   const filename = `letter-${letterId}-${Date.now()}.pdf`;
@@ -85,6 +113,7 @@ async function generatePDF(letterData, letterId) {
     await fsp.writeFile(filepath, pdfBuffer);
   } finally {
     await browser.close();
+    releaseSlot();
   }
 
   return { filepath, filename };

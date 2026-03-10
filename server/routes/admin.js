@@ -17,12 +17,15 @@ function requireAuth(req, res, next) {
 // POST /api/admin/login
 router.post('/login', (req, res) => {
   const { password } = req.body;
-  if (password === process.env.ADMIN_PASSWORD) {
-    req.session.isAdmin = true;
-    res.json({ success: true });
-  } else {
-    res.status(401).json({ error: 'Invalid password' });
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  // Reject if ADMIN_PASSWORD is not configured or if password doesn't match
+  if (!adminPassword || !password || password !== adminPassword) {
+    return res.status(401).json({ error: 'Invalid password' });
   }
+
+  req.session.isAdmin = true;
+  res.json({ success: true });
 });
 
 // POST /api/admin/logout

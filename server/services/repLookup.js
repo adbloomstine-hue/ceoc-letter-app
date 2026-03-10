@@ -5,7 +5,23 @@ const { getAssemblyData, getSenateData } = require('./geoData');
 async function geocodeAddress(street, city, zip) {
   const fullAddress = encodeURIComponent(`${street}, ${city}, CA ${zip}`);
   const url = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${fullAddress}&benchmark=2020&format=json`;
-  const response = await fetch(url);
+
+  // 10-second timeout to prevent hanging if Census API is slow or down
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
+  let response;
+  try {
+    response = await fetch(url, { signal: controller.signal });
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error('Unable to look up your representatives right now. Please try again.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+
   const data = await response.json();
   const matches = data?.result?.addressMatches;
   if (!matches || matches.length === 0) {

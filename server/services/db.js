@@ -1,7 +1,14 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
-const dbPath = process.env.DB_PATH || path.join(__dirname, '..', 'ceoc.db');
+const isProduction = process.env.NODE_ENV === 'production';
+const dbPath = process.env.DB_PATH || (isProduction ? '/app/storage/letters.db' : path.join(__dirname, '..', 'ceoc.db'));
+
+// Ensure the directory for the DB file exists
+fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+
+console.log('Database path:', dbPath);
 const db = new Database(dbPath);
 
 db.pragma('journal_mode = WAL');

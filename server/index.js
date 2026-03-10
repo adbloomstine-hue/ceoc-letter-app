@@ -15,8 +15,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Ensure PDF storage directory exists
-const pdfDir = process.env.PDF_PATH || path.join(__dirname, 'storage/pdfs');
+// Ensure PDF storage directory exists (use volume in production)
+const pdfDir = process.env.PDF_PATH || (isProduction ? '/app/storage/pdfs' : path.join(__dirname, 'storage/pdfs'));
 fs.mkdirSync(pdfDir, { recursive: true });
 
 // Load GeoJSON into memory before anything else
@@ -35,8 +35,9 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
-// Use SQLite-backed session store instead of MemoryStore
-const sessionDb = new Database(path.join(__dirname, 'sessions.db'));
+// Use SQLite-backed session store (on volume in production so sessions survive redeploy)
+const sessionDbPath = isProduction ? '/app/storage/sessions.db' : path.join(__dirname, 'sessions.db');
+const sessionDb = new Database(sessionDbPath);
 app.use(session({
   store: new SqliteStore({
     client: sessionDb,
