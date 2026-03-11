@@ -205,8 +205,9 @@ export default function LetterForm() {
 
           <div>
             <label htmlFor="address" className="block text-sm font-medium text-navy-800 mb-1">
-              Street Address <span className="text-red-500">*</span>
+              Home Address <span className="text-red-500">*</span>
             </label>
+            <p className="text-xs text-gray-500 mb-1">We use your home address to find your state representatives.</p>
             <input
               id="address"
               name="address"
