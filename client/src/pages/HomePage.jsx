@@ -34,9 +34,9 @@ export default function HomePage() {
               Make Your Voice Heard
             </h2>
             <p className="text-navy-100 text-base sm:text-lg leading-relaxed">
-              Generate a signed advocacy letter to your California Assembly Member supporting
-              employee ownership legislation. Fill out the form below, and we'll find your
-              representative and create a personalized letter for you to download.
+              Generate a signed advocacy letter addressed to Senator Valladares in support of SB 1174,
+              legislation that promotes employee stock ownership plans (ESOPs). Fill out the form below,
+              and we'll find your representative and create a personalized letter for you to download.
             </p>
           </div>
         </div>
