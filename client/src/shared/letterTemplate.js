@@ -49,7 +49,7 @@ export function generateLetterContent({ fullName, company, address, city, zip, a
     + '<div class="content">'
     + '<p>I am writing to express my strong support for Senate Bill 1174, which creates a contracting preference for construction companies that operate an employee stock ownership plan (ESOP). I believe that fostering employee ownership is crucial for building a stronger and more sustainable local economy.</p>'
     + '<p>Employee ownership offers significant benefits for businesses, employees, and the broader community. Employees at ESOP companies have 92% higher median household wealth, earn 33% higher wages, and stay with their employers 52% longer than similar workers at traditional firms. These companies have also demonstrated greater stability during economic downturns, including the COVID-19 pandemic, when they were far more likely to preserve jobs, pay, and benefits.</p>'
-    + '<p>I believe the State of California should invest taxpayer dollars in companies that give employee owners across the state access to wealth-building opportunities that have historically been limited to company executives.</p>'
+    + '<p>As an employee owner in California, I believe the state should invest taxpayer dollars in companies that give employee owners across the state access to wealth-building opportunities that have historically been limited to company executives.</p>'
     + '<p>Please record my personal support for SB 1174. I invite you to share my position with any and all relevant legislators and appropriate legislative committees.</p>'
     + '<p>California should absolutely do more to promote employee ownership growth in California. Thank you for your time and consideration.</p>'
     + '</div>'
