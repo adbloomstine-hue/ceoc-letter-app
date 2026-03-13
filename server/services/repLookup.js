@@ -74,6 +74,11 @@ function findReps(lat, lng) {
 async function lookupReps(street, city, zip) {
   const { lat, lng } = await geocodeAddress(street, city, zip);
   const reps = findReps(lat, lng);
+
+  if (!reps.assemblyMember && !reps.senator) {
+    return { ...reps, lat, lng, error: 'This address does not appear to be in California. Please enter a valid California address.' };
+  }
+
   return { ...reps, lat, lng };
 }
 
