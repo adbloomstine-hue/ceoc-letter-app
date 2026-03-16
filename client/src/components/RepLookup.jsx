@@ -1,12 +1,30 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 
 export default function RepLookup({ street, city, zip, onRepsFound, lookupRef }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [reps, setReps] = useState(null)
 
+  // Always keep a fresh ref to the current props so the lookup
+  // function never closes over stale values (fixes race condition
+  // where blur fires before React re-renders with latest state).
+  const propsRef = useRef({ street, city, zip, onRepsFound })
+  useEffect(() => {
+    propsRef.current = { street, city, zip, onRepsFound }
+  }, [street, city, zip, onRepsFound])
+
+  // AbortController ref to cancel in-flight requests when a new one starts
+  const abortRef = useRef(null)
+
   const lookupReps = useCallback(async () => {
+    const { street, city, zip, onRepsFound } = propsRef.current
+
     if (!street || !city || !zip || zip.length < 5) return
+
+    // Cancel any in-flight request
+    if (abortRef.current) abortRef.current.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
 
     setLoading(true)
     setError(null)
@@ -16,6 +34,7 @@ export default function RepLookup({ street, city, zip, onRepsFound, lookupRef })
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ street, city, zip }),
+        signal: controller.signal,
       })
 
       const data = await res.json()
@@ -27,13 +46,16 @@ export default function RepLookup({ street, city, zip, onRepsFound, lookupRef })
         setReps(data)
         onRepsFound(data)
       }
-    } catch {
+    } catch (err) {
+      if (err.name === 'AbortError') return // Silently ignore cancelled requests
       setError("We couldn't find your representatives. Please check your address and try again.")
       setReps(null)
     } finally {
-      setLoading(false)
+      if (!controller.signal.aborted) {
+        setLoading(false)
+      }
     }
-  }, [street, city, zip, onRepsFound])
+  }, []) // No deps — reads from propsRef
 
   // Expose lookupReps to parent via ref
   useEffect(() => {
