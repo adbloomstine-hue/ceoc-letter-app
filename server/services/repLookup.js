@@ -4,7 +4,7 @@ const { getAssemblyData, getSenateData } = require('./geoData');
 
 async function geocodeAddress(street, city, zip) {
   const fullAddress = encodeURIComponent(`${street}, ${city}, CA ${zip}`);
-  const url = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${fullAddress}&benchmark=2020&format=json`;
+  const url = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${fullAddress}&benchmark=Public_AR_Current&format=json`;
 
   // 10-second timeout to prevent hanging if Census API is slow or down
   const controller = new AbortController();
@@ -75,7 +75,7 @@ async function lookupReps(street, city, zip) {
   const { lat, lng } = await geocodeAddress(street, city, zip);
   const reps = findReps(lat, lng);
 
-  if (!reps.assemblyMember && !reps.senator) {
+  if (!reps.assemblyMember || !reps.senator) {
     return { ...reps, lat, lng, error: 'This address does not appear to be in California. Please enter a valid California address.' };
   }
 
