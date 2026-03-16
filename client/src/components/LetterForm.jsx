@@ -204,9 +204,22 @@ export default function LetterForm() {
           </div>
 
           <div>
-            <label htmlFor="address" className="block text-sm font-medium text-navy-800 mb-1">
-              Home Address <span className="text-red-500">*</span>
-            </label>
+            <div className="flex items-center gap-2 mb-1">
+              <label htmlFor="address" className="block text-sm font-medium text-navy-800">
+                Home Address <span className="text-red-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => { if (repLookupRef.current) repLookupRef.current() }}
+                title="Refresh address lookup"
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-navy-600 hover:text-gold-600 hover:bg-gray-100 rounded transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4 9a8 8 0 0113.5-4.5L20 7M20 15a8 8 0 01-13.5 4.5L4 17" />
+                </svg>
+                Refresh
+              </button>
+            </div>
             <p className="text-xs text-gray-500 mb-1">We use your home address to find your state representatives.</p>
             <input
               id="address"
