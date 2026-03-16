@@ -162,6 +162,8 @@ const queries = {
 
   updatePdfPath: db.prepare('UPDATE letters SET pdf_path = ? WHERE id = ?'),
 
+  deleteLetterById: db.prepare('DELETE FROM letters WHERE id = ?'),
+
   deleteAllLetters: db.prepare('DELETE FROM letters'),
 
   getAllPdfPaths: db.prepare('SELECT pdf_path FROM letters WHERE pdf_path IS NOT NULL'),

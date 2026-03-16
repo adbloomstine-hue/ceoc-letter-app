@@ -131,6 +131,35 @@ router.get('/export', requireAuth, (req, res) => {
   }
 });
 
+// DELETE /api/admin/letters/:id
+router.delete('/letters/:id', requireAuth, async (req, res) => {
+  try {
+    const letter = queries.getLetterById.get(req.params.id);
+    if (!letter) {
+      return res.status(404).json({ error: 'Letter not found' });
+    }
+
+    // Delete PDF file from disk if it exists
+    if (letter.pdf_path) {
+      try {
+        await fsp.unlink(letter.pdf_path);
+      } catch (fileErr) {
+        if (fileErr.code !== 'ENOENT') {
+          console.error(`Failed to delete PDF: ${letter.pdf_path}`, fileErr);
+        }
+      }
+    }
+
+    // Delete record from database
+    queries.deleteLetterById.run(req.params.id);
+
+    res.json({ success: true, deletedId: parseInt(req.params.id, 10) });
+  } catch (error) {
+    console.error('Delete letter error:', error);
+    res.status(500).json({ error: 'Failed to delete letter' });
+  }
+});
+
 // DELETE /api/admin/clear
 router.delete('/clear', requireAuth, async (req, res) => {
   try {

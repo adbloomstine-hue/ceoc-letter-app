@@ -10,6 +10,8 @@ export default function AdminTable() {
   const [exporting, setExporting] = useState(false)
   const [clearing, setClearing] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalFiltered, setTotalFiltered] = useState(0)
@@ -110,6 +112,23 @@ export default function AdminTable() {
       console.error('Failed to clear submissions:', err)
     } finally {
       setClearing(false)
+    }
+  }
+
+  const deleteLetter = async (id) => {
+    setDeletingId(id)
+    try {
+      const res = await fetch(`/api/admin/letters/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      if (!res.ok) throw new Error('Failed to delete')
+      setShowDeleteConfirm(null)
+      fetchLetters()
+    } catch (err) {
+      console.error('Failed to delete letter:', err)
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -246,6 +265,33 @@ export default function AdminTable() {
         </div>
       )}
 
+      {/* Delete Single Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-bold text-navy-800 mb-2">Delete This Letter?</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              This will permanently delete the letter from <strong>{showDeleteConfirm.full_name}</strong> ({showDeleteConfirm.company}) and its PDF file. This cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteLetter(showDeleteConfirm.id)}
+                disabled={deletingId === showDeleteConfirm.id}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                {deletingId === showDeleteConfirm.id ? 'Deleting...' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="overflow-x-auto border border-gray-200 rounded-xl">
         <table className="w-full text-sm">
@@ -262,16 +308,17 @@ export default function AdminTable() {
               <th className="text-left px-3 py-3 font-medium hidden sm:table-cell">Dist</th>
               <th className="text-left px-3 py-3 font-medium hidden xl:table-cell">Date</th>
               <th className="text-left px-3 py-3 font-medium">PDF</th>
+              <th className="text-left px-3 py-3 font-medium w-10"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {loading ? (
               <tr>
-                <td colSpan={11} className="text-center py-12 text-gray-400">Loading...</td>
+                <td colSpan={12} className="text-center py-12 text-gray-400">Loading...</td>
               </tr>
             ) : letters.length === 0 ? (
               <tr>
-                <td colSpan={11} className="text-center py-12 text-gray-400">No letters submitted yet.</td>
+                <td colSpan={12} className="text-center py-12 text-gray-400">No letters submitted yet.</td>
               </tr>
             ) : (
               letters.map((letter, i) => (
@@ -292,6 +339,17 @@ export default function AdminTable() {
                       className="px-3 py-1.5 bg-navy-800 text-white text-xs font-medium rounded-md hover:bg-navy-700 transition-colors"
                     >
                       PDF
+                    </button>
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <button
+                      onClick={() => setShowDeleteConfirm(letter)}
+                      className="px-2 py-1.5 text-red-500 hover:text-white hover:bg-red-500 text-xs font-medium rounded-md transition-colors"
+                      title="Delete this letter"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
                     </button>
                   </td>
                 </tr>
