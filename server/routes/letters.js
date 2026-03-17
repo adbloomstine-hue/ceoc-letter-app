@@ -5,10 +5,11 @@ const { queries } = require('../services/db');
 const { lookupReps } = require('../services/repLookup');
 const { generatePDF } = require('../services/pdfGenerator');
 
-// Max 5 submissions per IP per hour
+// Max 100 submissions per IP per 15 minutes
+// (many employees share one public IP at a company office)
 const submitLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 5,
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => process.env.RATE_LIMIT_DISABLED === 'true',
