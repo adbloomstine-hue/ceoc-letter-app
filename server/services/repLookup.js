@@ -2,43 +2,70 @@ const booleanPointInPolygon = require('@turf/boolean-point-in-polygon').default;
 const { point } = require('@turf/helpers');
 const { getAssemblyData, getSenateData } = require('./geoData');
 
-async function geocodeAddress(street, city, zip) {
+// Strip apartment/unit/suite from street for geocoding (Census often chokes on these)
+function stripUnit(street) {
+  return street.replace(/[,.]?\s*(apt|suite|ste|unit|#)\s*\S*/i, '').trim();
+}
+
+async function geocodeCensus(street, city, zip) {
   const fullAddress = encodeURIComponent(`${street}, ${city}, CA ${zip}`);
   const url = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${fullAddress}&benchmark=Public_AR_Current&format=json`;
 
-  // Retry up to 2 times — Census API is intermittently flaky
-  const MAX_ATTEMPTS = 3;
-  let lastError;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
 
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-
-    try {
-      const response = await fetch(url, { signal: controller.signal });
-      const data = await response.json();
-      const matches = data?.result?.addressMatches;
-      if (!matches || matches.length === 0) {
-        // No match — might be transient, retry
-        lastError = new Error('Address could not be geocoded. Please check the address and try again.');
-        if (attempt < MAX_ATTEMPTS) { await new Promise(r => setTimeout(r, 500)); continue; }
-        throw lastError;
-      }
-      const { x: lng, y: lat } = matches[0].coordinates;
-      return { lat, lng };
-    } catch (err) {
-      lastError = err.name === 'AbortError'
-        ? new Error('Unable to look up your representatives right now. Please try again.')
-        : err;
-      if (attempt < MAX_ATTEMPTS && err.name !== 'AbortError') {
-        await new Promise(r => setTimeout(r, 500));
-        continue;
-      }
-      throw lastError;
-    } finally {
-      clearTimeout(timeout);
-    }
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    const data = await response.json();
+    const matches = data?.result?.addressMatches;
+    if (!matches || matches.length === 0) return null;
+    const { x: lng, y: lat } = matches[0].coordinates;
+    return { lat, lng };
+  } catch (err) {
+    if (err.name === 'AbortError') return null;
+    return null;
+  } finally {
+    clearTimeout(timeout);
   }
+}
+
+async function geocodeNominatim(street, city, zip) {
+  const q = encodeURIComponent(`${street}, ${city}, CA ${zip}`);
+  const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=us`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'CEOC-Letter-Generator/1.0' },
+    });
+    const results = await response.json();
+    if (!results || results.length === 0) return null;
+    return { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function geocodeAddress(street, city, zip) {
+  const cleanStreet = stripUnit(street);
+
+  // Try Census geocoder with retries (primary)
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const result = await geocodeCensus(cleanStreet, city, zip);
+    if (result) return result;
+    if (attempt < 3) await new Promise(r => setTimeout(r, 500));
+  }
+
+  // Fallback: OpenStreetMap Nominatim
+  const fallback = await geocodeNominatim(cleanStreet, city, zip);
+  if (fallback) return fallback;
+
+  throw new Error('Address could not be geocoded. Please check the address and try again.');
 }
 
 function findReps(lat, lng) {
