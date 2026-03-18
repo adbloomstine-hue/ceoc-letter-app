@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import SignaturePad from './SignaturePad'
 import RepLookup from './RepLookup'
 import LetterPreview from './LetterPreview'
@@ -55,6 +55,18 @@ export default function LetterForm() {
       repLookupRef.current()
     }
   }, [])
+
+  // Auto-trigger rep lookup when all address fields are filled
+  // (catches browser autofill, paste, and other non-blur entry methods)
+  useEffect(() => {
+    if (formData.address && formData.city && formData.zip && formData.zip.length >= 5) {
+      // Small delay to let autofill finish populating all fields
+      const timer = setTimeout(() => {
+        if (repLookupRef.current) repLookupRef.current()
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [formData.address, formData.city, formData.zip])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -226,6 +238,7 @@ export default function LetterForm() {
               name="address"
               type="text"
               required
+              autoComplete="street-address"
               value={formData.address}
               onChange={handleChange}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-400 focus:border-gold-400 outline-none transition-colors"
@@ -243,6 +256,7 @@ export default function LetterForm() {
                 name="city"
                 type="text"
                 required
+                autoComplete="address-level2"
                 value={formData.city}
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-400 focus:border-gold-400 outline-none transition-colors"
@@ -270,6 +284,7 @@ export default function LetterForm() {
                 name="zip"
                 type="text"
                 required
+                autoComplete="postal-code"
                 value={formData.zip}
                 onChange={handleChange}
                 onBlur={handleZipBlur}

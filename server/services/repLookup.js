@@ -6,29 +6,39 @@ async function geocodeAddress(street, city, zip) {
   const fullAddress = encodeURIComponent(`${street}, ${city}, CA ${zip}`);
   const url = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${fullAddress}&benchmark=Public_AR_Current&format=json`;
 
-  // 10-second timeout to prevent hanging if Census API is slow or down
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
+  // Retry up to 2 times — Census API is intermittently flaky
+  const MAX_ATTEMPTS = 3;
+  let lastError;
 
-  let response;
-  try {
-    response = await fetch(url, { signal: controller.signal });
-  } catch (err) {
-    if (err.name === 'AbortError') {
-      throw new Error('Unable to look up your representatives right now. Please try again.');
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      const data = await response.json();
+      const matches = data?.result?.addressMatches;
+      if (!matches || matches.length === 0) {
+        // No match — might be transient, retry
+        lastError = new Error('Address could not be geocoded. Please check the address and try again.');
+        if (attempt < MAX_ATTEMPTS) { await new Promise(r => setTimeout(r, 500)); continue; }
+        throw lastError;
+      }
+      const { x: lng, y: lat } = matches[0].coordinates;
+      return { lat, lng };
+    } catch (err) {
+      lastError = err.name === 'AbortError'
+        ? new Error('Unable to look up your representatives right now. Please try again.')
+        : err;
+      if (attempt < MAX_ATTEMPTS && err.name !== 'AbortError') {
+        await new Promise(r => setTimeout(r, 500));
+        continue;
+      }
+      throw lastError;
+    } finally {
+      clearTimeout(timeout);
     }
-    throw err;
-  } finally {
-    clearTimeout(timeout);
   }
-
-  const data = await response.json();
-  const matches = data?.result?.addressMatches;
-  if (!matches || matches.length === 0) {
-    throw new Error('Address could not be geocoded. Please check the address and try again.');
-  }
-  const { x: lng, y: lat } = matches[0].coordinates;
-  return { lat, lng };
 }
 
 function findReps(lat, lng) {
