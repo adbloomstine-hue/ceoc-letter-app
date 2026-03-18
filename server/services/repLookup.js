@@ -12,17 +12,25 @@ async function geocodeCensus(street, city, zip) {
   const url = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${fullAddress}&benchmark=Public_AR_Current&format=json`;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
+  const timeout = setTimeout(() => controller.abort(), 15000);
 
   try {
     const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) {
+      console.warn(`[Census] HTTP ${response.status} for "${street}, ${city} ${zip}"`);
+      return null;
+    }
     const data = await response.json();
     const matches = data?.result?.addressMatches;
-    if (!matches || matches.length === 0) return null;
+    if (!matches || matches.length === 0) {
+      console.warn(`[Census] No matches for "${street}, ${city} ${zip}"`);
+      return null;
+    }
     const { x: lng, y: lat } = matches[0].coordinates;
+    console.log(`[Census] OK: "${street}, ${city} ${zip}" → ${lat}, ${lng}`);
     return { lat, lng };
   } catch (err) {
-    if (err.name === 'AbortError') return null;
+    console.warn(`[Census] ${err.name === 'AbortError' ? 'Timeout' : err.message} for "${street}, ${city} ${zip}"`);
     return null;
   } finally {
     clearTimeout(timeout);
@@ -34,16 +42,50 @@ async function geocodeNominatim(street, city, zip) {
   const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=us`;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
+  const timeout = setTimeout(() => controller.abort(), 15000);
 
   try {
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: { 'User-Agent': 'CEOC-Letter-Generator/1.0' },
+      headers: { 'User-Agent': 'CEOC-Letter-Generator/1.0 (ceocletters.com)' },
     });
+    if (!response.ok) {
+      console.warn(`[Nominatim] HTTP ${response.status} for "${street}, ${city} ${zip}"`);
+      return null;
+    }
     const results = await response.json();
-    if (!results || results.length === 0) return null;
-    return { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) };
+    if (!results || results.length === 0) {
+      console.warn(`[Nominatim] No matches for "${street}, ${city} ${zip}"`);
+      return null;
+    }
+    const lat = parseFloat(results[0].lat);
+    const lng = parseFloat(results[0].lon);
+    console.log(`[Nominatim] OK: "${street}, ${city} ${zip}" → ${lat}, ${lng}`);
+    return { lat, lng };
+  } catch (err) {
+    console.warn(`[Nominatim] ${err.name === 'AbortError' ? 'Timeout' : err.message} for "${street}, ${city} ${zip}"`);
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// ZIP-code centroid fallback — uses Census TIGERweb for rough coordinates
+async function geocodeByZip(zip) {
+  const url = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${zip}&benchmark=Public_AR_Current&format=json`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const matches = data?.result?.addressMatches;
+    if (!matches || matches.length === 0) return null;
+    const { x: lng, y: lat } = matches[0].coordinates;
+    console.log(`[ZIP-fallback] OK: ZIP ${zip} → ${lat}, ${lng}`);
+    return { lat, lng };
   } catch {
     return null;
   } finally {
@@ -53,18 +95,37 @@ async function geocodeNominatim(street, city, zip) {
 
 async function geocodeAddress(street, city, zip) {
   const cleanStreet = stripUnit(street);
+  console.log(`[Geocode] Starting lookup: "${cleanStreet}", "${city}", "${zip}"`);
 
-  // Try Census geocoder with retries (primary)
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  // Strategy 1: Census geocoder (try twice with a pause)
+  for (let attempt = 1; attempt <= 2; attempt++) {
     const result = await geocodeCensus(cleanStreet, city, zip);
     if (result) return result;
-    if (attempt < 3) await new Promise(r => setTimeout(r, 500));
+    if (attempt < 2) await new Promise(r => setTimeout(r, 800));
   }
 
-  // Fallback: OpenStreetMap Nominatim
-  const fallback = await geocodeNominatim(cleanStreet, city, zip);
-  if (fallback) return fallback;
+  // Strategy 2: Nominatim (try twice with a pause)
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const result = await geocodeNominatim(cleanStreet, city, zip);
+    if (result) return result;
+    if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
+  }
 
+  // Strategy 3: Try with just city + ZIP on Census (drops street)
+  const cityOnly = await geocodeCensus('', city, zip);
+  if (cityOnly) {
+    console.log(`[Geocode] Using city-level fallback for "${city}, CA ${zip}"`);
+    return cityOnly;
+  }
+
+  // Strategy 4: Try Nominatim with just city + state
+  const cityNom = await geocodeNominatim('', city, zip);
+  if (cityNom) {
+    console.log(`[Geocode] Using Nominatim city-level fallback for "${city}, CA ${zip}"`);
+    return cityNom;
+  }
+
+  console.error(`[Geocode] All strategies failed for "${cleanStreet}, ${city}, CA ${zip}"`);
   throw new Error('Address could not be geocoded. Please check the address and try again.');
 }
 
