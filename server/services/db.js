@@ -143,9 +143,26 @@ const queries = {
         COUNT(DISTINCT senate_district) as uniqueSenate
       FROM letters
     `).get();
-    const companyCounts = db.prepare(
+    // Group companies whose first 4 characters match so variants
+    // (e.g. "Pavement Recycling Systems" vs "Pavement Recycling Systems, Inc.")
+    // are combined into one row. Picks the most common full name as the label.
+    const rawCounts = db.prepare(
       'SELECT company, COUNT(*) as count FROM letters GROUP BY company ORDER BY count DESC'
     ).all();
+    const grouped = {};
+    for (const row of rawCounts) {
+      const prefix = row.company.substring(0, 4).toUpperCase();
+      if (!grouped[prefix]) {
+        grouped[prefix] = { company: row.company, count: row.count };
+      } else {
+        // Keep the name of whichever variant has more entries
+        if (row.count > grouped[prefix].count) {
+          grouped[prefix].company = row.company;
+        }
+        grouped[prefix].count += row.count;
+      }
+    }
+    const companyCounts = Object.values(grouped).sort((a, b) => b.count - a.count);
     return { ...summary, companyCounts };
   },
 
@@ -153,7 +170,7 @@ const queries = {
     let whereClauses = ['1=1'];
     const params = [];
     if (filters.name) { whereClauses.push('full_name LIKE ?'); params.push(`%${filters.name}%`); }
-    if (filters.company) { whereClauses.push('company = ?'); params.push(filters.company); }
+    if (filters.company) { whereClauses.push('UPPER(SUBSTR(company, 1, 4)) = UPPER(SUBSTR(?, 1, 4))'); params.push(filters.company); }
     if (filters.assemblyDistrict) { whereClauses.push('assembly_district LIKE ?'); params.push(`%${filters.assemblyDistrict}%`); }
     if (filters.senateDistrict) { whereClauses.push('senate_district LIKE ?'); params.push(`%${filters.senateDistrict}%`); }
     const sql = `SELECT ${SELECT_COLS} FROM letters WHERE ${whereClauses.join(' AND ')} ORDER BY submitted_at DESC`;
