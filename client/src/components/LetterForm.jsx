@@ -58,12 +58,12 @@ export default function LetterForm() {
 
   // Auto-trigger rep lookup when all address fields are filled
   // (catches browser autofill, paste, and other non-blur entry methods)
+  // Uses a 1.5s debounce so we don't fire on every keystroke while typing
   useEffect(() => {
     if (formData.address && formData.city && formData.zip && formData.zip.length >= 5) {
-      // Small delay to let autofill finish populating all fields
       const timer = setTimeout(() => {
         if (repLookupRef.current) repLookupRef.current()
-      }, 500)
+      }, 1500)
       return () => clearTimeout(timer)
     }
   }, [formData.address, formData.city, formData.zip])
