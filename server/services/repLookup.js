@@ -37,7 +37,7 @@ async function geocodeCensus(street, city, zip) {
   }
 }
 
-async function geocodeNominatim(street, city, zip) {
+async function geocodeNominatim(street, city, zip, _isRetry = false) {
   const q = encodeURIComponent(`${street}, ${city}, CA ${zip}`);
   const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=us`;
 
@@ -49,6 +49,13 @@ async function geocodeNominatim(street, city, zip) {
       signal: controller.signal,
       headers: { 'User-Agent': 'CEOC-Letter-Generator/1.0 (ceocletters.com)' },
     });
+    // On 429 rate limit, wait 2s and retry once before giving up
+    if (response.status === 429 && !_isRetry) {
+      console.warn(`[Nominatim] HTTP 429 rate limited - waiting 2s before retry for "${street}, ${city} ${zip}"`);
+      clearTimeout(timeout);
+      await new Promise(r => setTimeout(r, 2000));
+      return geocodeNominatim(street, city, zip, true);
+    }
     if (!response.ok) {
       console.warn(`[Nominatim] HTTP ${response.status} for "${street}, ${city} ${zip}"`);
       return null;
