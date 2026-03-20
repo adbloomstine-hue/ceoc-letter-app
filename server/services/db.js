@@ -151,7 +151,7 @@ const queries = {
     ).all();
     const grouped = {};
     for (const row of rawCounts) {
-      const prefix = row.company.substring(0, 4).toUpperCase();
+      const prefix = row.company.trim().substring(0, 4).toUpperCase();
       if (!grouped[prefix]) {
         grouped[prefix] = { company: row.company, count: row.count };
       } else {
